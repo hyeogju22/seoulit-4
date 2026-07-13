@@ -15,7 +15,6 @@ COINS.forEach(c => {
   initialTotalAsset += c.avgPrice * c.amount;
 });
 
-// 코인별 실시간 데이터 흐름 저장소
 const chartDataStorage = {};
 COINS.forEach(c => {
   chartDataStorage[c.sym] = makeInitialData(c.price, c.chg);
@@ -37,19 +36,20 @@ function makeInitialData(base, chg, n = 20) {
   return out;
 }
 
-// 1. 인기 코인 고정 목록 출력
-const coinList = document.getElementById('coinList');
-function renderCoinList() {
+function initCoinList() {
+  const coinList = document.getElementById('coinList');
   if (!coinList) return;
   coinList.innerHTML = '';
+  
   COINS.forEach((c) => {
     const el = document.createElement('li');
+    el.id = `list-${c.sym}`;
     el.className = 'coin' + (c.sym === selectedCoin.sym ? ' active' : '');
     el.innerHTML = `
       <div class="coin-ic" style="background:${c.color}22;color:${c.color}">${c.sym[0]}</div>
       <div class="coin-info"><b>${c.name}</b><span>${c.sym}</span></div>
-      <div class="coin-price">₩ ${fmt(c.price)}</div>
-      <div class="coin-chg ${c.chg >= 0 ? 'up' : 'down'}">${c.chg >= 0 ? '▲' : '▼'} ${Math.abs(c.chg).toFixed(2)}%</div>
+      <div class="coin-price" id="lp-${c.sym}">₩ 0</div>
+      <div class="coin-chg" id="lc-${c.sym}">0%</div>
     `;
     el.addEventListener('click', () => {
       selectedCoin = c;
@@ -63,6 +63,18 @@ function renderCoinList() {
   });
 }
 
+function updateCoinListValues() {
+  COINS.forEach(c => {
+    const priceEl = document.getElementById(`lp-${c.sym}`);
+    const chgEl = document.getElementById(`lc-${c.sym}`);
+    if (priceEl) priceEl.textContent = `₩ ${fmt(c.price)}`;
+    if (chgEl) {
+      chgEl.textContent = `${c.chg >= 0 ? '▲' : '▼'} ${Math.abs(c.chg).toFixed(2)}%`;
+      chgEl.className = `coin-chg ${c.chg >= 0 ? 'up' : 'down'}`;
+    }
+  });
+}
+
 function selectOrderCoin(c) {
   document.getElementById('orderCoinName').textContent = c.name;
   document.getElementById('orderCoinSym').textContent = c.sym;
@@ -71,11 +83,7 @@ function selectOrderCoin(c) {
   document.getElementById('orderMyAmount').textContent = c.amount.toFixed(4);
 }
 
-// 2. 보유 자산 테이블 고정 출력 (행 누적 현상 제거)
-const holdings = document.getElementById('holdings');
 function updatePortfolioAndHoldings() {
-  if (!holdings) return;
-  holdings.innerHTML = ''; 
   let totalCoinValue = 0;
 
   COINS.forEach((c) => {
@@ -86,16 +94,17 @@ function updatePortfolioAndHoldings() {
     
     totalCoinValue += value;
 
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${c.sym} <span style="color:var(--muted);font-weight:400">${c.name}</span></td>
-      <td>${c.amount.toFixed(4)}</td>
-      <td>₩ ${fmt(c.avgPrice)}</td>
-      <td>₩ ${fmt(c.price)}</td>
-      <td class="${pnl >= 0 ? 'up' : 'down'}">${pnl > 0 ? '+' : ''}${c.amount > 0 ? '₩ ' + fmt(pnl) : '₩ 0'}</td>
-      <td class="${pct >= 0 ? 'up' : 'down'}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</td>
-    `;
-    holdings.appendChild(tr);
+    const tr = document.getElementById(`row-${c.sym}`);
+    if (tr) {
+      tr.innerHTML = `
+        <td>${c.sym} <span style="color:var(--muted);font-weight:400">${c.name}</span></td>
+        <td>${c.amount.toFixed(4)}</td>
+        <td>₩ ${fmt(c.avgPrice)}</td>
+        <td>₩ ${fmt(c.price)}</td>
+        <td class="${pnl >= 0 ? 'up' : 'down'}">${pnl > 0 ? '+' : ''}${c.amount > 0 ? '₩ ' + fmt(pnl) : '₩ 0'}</td>
+        <td class="${pct >= 0 ? 'up' : 'down'}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</td>
+      `;
+    }
   });
 
   const currentTotalAsset = userCash + totalCoinValue;
@@ -113,21 +122,13 @@ function updatePortfolioAndHoldings() {
   document.getElementById('orderPrice').textContent = '₩ ' + fmt(selectedCoin.price);
 }
 
-// 🛒 즉시 구매 매커니즘
 document.getElementById('btnBuy').addEventListener('click', () => {
   const amtInput = document.getElementById('tradeAmount');
   const amountToBuy = parseFloat(amtInput.value);
-
-  if (isNaN(amountToBuy) || amountToBuy <= 0) {
-    alert('올바른 수량을 입력해주세요.');
-    return;
-  }
+  if (isNaN(amountToBuy) || amountToBuy <= 0) return alert('올바른 수량을 입력해주세요.');
 
   const requiredCash = selectedCoin.price * amountToBuy;
-  if (userCash < requiredCash) {
-    alert('보유 현금이 부족합니다.');
-    return;
-  }
+  if (userCash < requiredCash) return alert('보유 현금이 부족합니다.');
 
   userCash -= requiredCash;
   const currentCost = selectedCoin.avgPrice * selectedCoin.amount;
@@ -138,23 +139,15 @@ document.getElementById('btnBuy').addEventListener('click', () => {
 
   amtInput.value = '';
   updatePortfolioAndHoldings();
-  renderCoinList();
+  updateCoinListValues();
 });
 
-// 📉 즉시 판매 매커니즘
 document.getElementById('btnSell').addEventListener('click', () => {
   const amtInput = document.getElementById('tradeAmount');
   const amountToSell = parseFloat(amtInput.value);
+  if (isNaN(amountToSell) || amountToSell <= 0) return alert('올바른 수량을 입력해주세요.');
 
-  if (isNaN(amountToSell) || amountToSell <= 0) {
-    alert('올바른 수량을 입력해주세요.');
-    return;
-  }
-
-  if (parseFloat(selectedCoin.amount.toFixed(6)) < amountToSell) {
-    alert('보유 수량이 부족합니다.');
-    return;
-  }
+  if (parseFloat(selectedCoin.amount.toFixed(6)) < amountToSell) return alert('보유 수량이 부족합니다.');
 
   const revenue = selectedCoin.price * amountToSell;
   userCash += revenue;
@@ -167,23 +160,26 @@ document.getElementById('btnSell').addEventListener('click', () => {
 
   amtInput.value = '';
   updatePortfolioAndHoldings();
-  renderCoinList();
+  updateCoinListValues();
 });
 
-// 📊 차트 틀 고정 및 선만 실시간 전진 시스템
 let chart;
 function updateChart(c) {
   const ctx = document.getElementById('priceChart');
   if (!ctx) return;
   
   const currentHistory = chartDataStorage[c.sym];
+  const minLimit = c.price * 0.85;
+  const maxLimit = c.price * 1.15;
 
   if (chart) {
     chart.data.labels = currentHistory.map((_, i) => `${i}m`);
     chart.data.datasets[0].data = currentHistory;
     chart.data.datasets[0].borderColor = c.chg >= 0 ? '#16c784' : '#ea3943';
     chart.data.datasets[0].backgroundColor = c.chg >= 0 ? 'rgba(22,199,132,.08)' : 'rgba(234,57,67,.08)';
-    chart.update('none'); // 프레임 재생성 없이 '선' 데이터만 업데이트하여 이동시킴
+    chart.options.scales.y.min = minLimit;
+    chart.options.scales.y.max = maxLimit;
+    chart.update('none'); 
   } else {
     chart = new Chart(ctx, {
       type: 'line',
@@ -200,7 +196,7 @@ function updateChart(c) {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { grid: { color: '#1a2138' }, ticks: { color: '#8088a3' } },
+          y: { grid: { color: '#1a2138' }, ticks: { color: '#8088a3' }, min: minLimit, max: maxLimit },
           x: { grid: { display: false }, ticks: { color: '#8088a3', autoSkip: true, maxTicksLimit: 8 } },
         },
       },
@@ -208,47 +204,34 @@ function updateChart(c) {
   }
 }
 
-// 🎰 3초 복불복 변동 시뮬레이터 (5% 확률 무작위 대폭락 떡락 / 대폭등 떡상)
 setInterval(() => {
   COINS.forEach((c) => { 
     const dice = Math.random();
     let rate = 0;
-
     if (dice < 0.025) { 
-      // 💥 2.5% 확률 악재 터짐 (-10% ~ -25% 대폭락)
-      rate = -(0.1 + Math.random() * 0.15);
+      rate = -(0.05 + Math.random() * 0.10); 
     } else if (dice > 0.975) {
-      // 🚀 2.5% 확률 호재 터짐 (+10% ~ +25% 대폭등)
-      rate = (0.1 + Math.random() * 0.15);
+      rate = (0.05 + Math.random() * 0.10);  
     } else {
-      // 95% 평범한 복불복 미세 무작위 위아래 등락
       const isUp = Math.random() > 0.50;
-      rate = (Math.random() * 0.012) * (isUp ? 1 : -1); 
+      rate = (Math.random() * 0.008) * (isUp ? 1 : -1); 
     }
-
     c.price *= (1 + rate); 
     c.chg += rate * 100;
 
-    // 차트 배열 끝에 새 가격 넣고 맨 앞 제거하여 선이 왼쪽으로 스르륵 전진하게 연동
     chartDataStorage[c.sym].push(c.price);
     chartDataStorage[c.sym].shift();
   });
 
-  renderCoinList();
+  updateCoinListValues();
   updatePortfolioAndHoldings();
   updateChart(selectedCoin);
 }, 3000);
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderCoinList();
+  initCoinList();
+  updateCoinListValues();
   selectOrderCoin(selectedCoin);
   updatePortfolioAndHoldings();
   updateChart(selectedCoin);
-  
-  document.querySelectorAll('.t-btn').forEach((b) => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('.t-btn').forEach((x) => x.classList.remove('active'));
-      b.classList.add('active');
-    });
-  });
 });
