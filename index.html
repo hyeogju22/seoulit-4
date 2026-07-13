@@ -33,18 +33,10 @@
     </section>
 
     <section class="row">
-      <div class="panel">
+      <div class="panel" style="min-height: 280px;">
         <header>
           <h3 id="chartCoin">BTC / KRW</h3>
-          <div class="time-btn">
-            <button class="t-btn" data-t="1H">1H</button>
-            <button class="t-btn active" data-t="24H">24H</button>
-            <button class="t-btn" data-t="7D">7D</button>
-            <button class="t-btn" data-t="1M">1M</button>
-            <button class="t-btn" data-t="1Y">1Y</button>
-          </div>
         </header>
-        <!-- 차트 박스 틀 고정 -->
         <canvas id="priceChart" height="200"></canvas>
       </div>
     </section>
@@ -56,8 +48,7 @@
       </div>
 
       <div class="right-col">
-        <!-- 🔥 구매 버튼과 판매 버튼이 명확히 들어간 주문 패널 -->
-        <div class="panel order-panel">
+        <div class="panel order-panel sticky-order-panel">
           <header><h3>⚡ <span id="orderCoinName">비트코인</span> 주문하기</h3></header>
           <div class="order-box">
             <div class="order-info">
@@ -69,18 +60,10 @@
               <span class="unit" id="inputUnit">BTC</span>
             </div>
             <div class="trade-buttons">
-              <button id="btnBuy" class="t-trade-btn buy-btn" style="background:#16c784; color:white; border:none; padding:10px; cursor:pointer; font-weight:bold; border-radius:4px; flex:1; margin-right:5px;">즉시 구매</button>
-              <button id="btnSell" class="t-trade-btn sell-btn" style="background:#ea3943; color:white; border:none; padding:10px; cursor:pointer; font-weight:bold; border-radius:4px; flex:1;">즉시 판매</button>
+              <button id="btnBuy" class="t-trade-btn buy-btn" style="background:#16c784; color:white; border:none; padding:12px; cursor:pointer; font-weight:bold; border-radius:4px; flex:1; margin-right:5px;">즉시 구매</button>
+              <button id="btnSell" class="t-trade-btn sell-btn" style="background:#ea3943; color:white; border:none; padding:12px; cursor:pointer; font-weight:bold; border-radius:4px; flex:1;">즉시 판매</button>
             </div>
           </div>
-        </div>
-
-        <div class="panel">
-          <header><h3>📰 마켓 뉴스</h3></header>
-          <ul class="news">
-            <li><span class="tag t-up">상승</span><div><b>비트코인 ETF 자금 유입 14주 연속 양수</b><span>5분 전 · 매일경제</span></div></li>
-            <li><span class="tag t-down">하락</span><div><b>이더리움, 다음 업그레이드 일정 발표</b><span>23분 전 · 토큰포스트</span></div></li>
-          </ul>
         </div>
       </div>
     </section>
@@ -90,7 +73,14 @@
         <header><h3>📊 보유 자산</h3></header>
         <table class="holdings">
           <thead><tr><th>자산</th><th>보유량</th><th>평균 매수가</th><th>현재가</th><th>평가 손익</th><th>수익률</th></tr></thead>
-          <tbody id="holdings"></tbody>
+          <tbody>
+            <tr id="row-BTC"></tr>
+            <tr id="row-ETH"></tr>
+            <tr id="row-SOL"></tr>
+            <tr id="row-BNB"></tr>
+            <tr id="row-XRP"></tr>
+            <tr id="row-ADA"></tr>
+          </tbody>
         </table>
       </div>
     </section>
