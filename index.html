@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Coin — 암호화폐 대시보드</title>
-  <!-- 깃허브 페이지 호환성을 위해 경로 앞에 ./ 를 명시했습니다 -->
   <link rel="stylesheet" href="./style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -45,6 +44,7 @@
             <button class="t-btn" data-t="1Y">1Y</button>
           </div>
         </header>
+        <!-- 차트 박스 틀 고정 -->
         <canvas id="priceChart" height="200"></canvas>
       </div>
     </section>
@@ -56,6 +56,7 @@
       </div>
 
       <div class="right-col">
+        <!-- 🔥 구매 버튼과 판매 버튼이 명확히 들어간 주문 패널 -->
         <div class="panel order-panel">
           <header><h3>⚡ <span id="orderCoinName">비트코인</span> 주문하기</h3></header>
           <div class="order-box">
@@ -68,8 +69,8 @@
               <span class="unit" id="inputUnit">BTC</span>
             </div>
             <div class="trade-buttons">
-              <button id="btnBuy" class="t-trade-btn buy-btn">즉시 매수</button>
-              <button id="btnSell" class="t-trade-btn sell-btn">즉시 매도</button>
+              <button id="btnBuy" class="t-trade-btn buy-btn" style="background:#16c784; color:white; border:none; padding:10px; cursor:pointer; font-weight:bold; border-radius:4px; flex:1; margin-right:5px;">즉시 구매</button>
+              <button id="btnSell" class="t-trade-btn sell-btn" style="background:#ea3943; color:white; border:none; padding:10px; cursor:pointer; font-weight:bold; border-radius:4px; flex:1;">즉시 판매</button>
             </div>
           </div>
         </div>
@@ -79,9 +80,6 @@
           <ul class="news">
             <li><span class="tag t-up">상승</span><div><b>비트코인 ETF 자금 유입 14주 연속 양수</b><span>5분 전 · 매일경제</span></div></li>
             <li><span class="tag t-down">하락</span><div><b>이더리움, 다음 업그레이드 일정 발표</b><span>23분 전 · 토큰포스트</span></div></li>
-            <li><span class="tag t-neu">중립</span><div><b>SEC, 알트코인 ETF 심사 일정 공개</b><span>1시간 전 · 코인데스크</span></div></li>
-            <li><span class="tag t-up">상승</span><div><b>솔라나 네트워크 TPS 신기록</b><span>3시간 전 · 디센터</span></div></li>
-            <li><span class="tag t-neu">중립</span><div><b>한국 가상자산 거래소 통합 보고서 발간</b><span>5시간 전 · 한국경제</span></div></li>
           </ul>
         </div>
       </div>
@@ -89,7 +87,7 @@
 
     <section class="row">
       <div class="panel full">
-        <header><h3>📊 보유 자산</h3><button class="ghost">＋ 자산 추가</button></header>
+        <header><h3>📊 보유 자산</h3></header>
         <table class="holdings">
           <thead><tr><th>자산</th><th>보유량</th><th>평균 매수가</th><th>현재가</th><th>평가 손익</th><th>수익률</th></tr></thead>
           <tbody id="holdings"></tbody>
@@ -98,7 +96,6 @@
     </section>
   </main>
 
-  <!-- 스크립트 경로 역시 ./ 를 명시하여 안전하게 불러옵니다 -->
   <script src="./script.js"></script>
 </body>
 </html>
