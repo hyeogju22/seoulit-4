@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Coin — 암호화폐 대시보드</title>
-  <link rel="stylesheet" href="style.css" />
+  <!-- 깃허브 페이지 호환성을 위해 경로 앞에 ./ 를 명시했습니다 -->
+  <link rel="stylesheet" href="./style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -12,7 +13,6 @@
     <div class="brand">🪙 <b>Coin</b><span>실시간 시세</span></div>
     <div class="right">
       <span class="live">● 실시간</span>
-      <!-- 보유 현금 표시 영역 추가 -->
       <div class="krw-wallet">보유 현금: <b id="userCash">10,000,000</b> 원</div>
       <button class="wallet">💼 내 지갑</button>
     </div>
@@ -55,9 +55,7 @@
         <ul class="coin-list" id="coinList"></ul>
       </div>
 
-      <!-- 우측 사이드바 영역 분리 -->
       <div class="right-col">
-        <!-- 💰 실시간 매수/매도 주문 패널 -->
         <div class="panel order-panel">
           <header><h3>⚡ <span id="orderCoinName">비트코인</span> 주문하기</h3></header>
           <div class="order-box">
@@ -100,6 +98,7 @@
     </section>
   </main>
 
-  <script src="script.js"></script>
+  <!-- 스크립트 경로 역시 ./ 를 명시하여 안전하게 불러옵니다 -->
+  <script src="./script.js"></script>
 </body>
 </html>
