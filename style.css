@@ -22,7 +22,6 @@ body {
   padding-bottom: 40px;
 }
 
-/* 상단 탑바 네비게이션 */
 .top {
   display: flex;
   justify-content: space-between;
@@ -38,7 +37,6 @@ body {
 .live::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--up); border-radius: 50%; }
 .krw-wallet b { color: var(--accent); }
 
-/* 메인 대시보드 래퍼 */
 .main {
   max-width: 1300px;
   margin: 0 auto;
@@ -48,7 +46,6 @@ body {
   gap: 24px;
 }
 
-/* 상단 총자산 브리핑 보드 */
 .hero {
   background: linear-gradient(135deg, #1e222d, #11141d);
   padding: 24px;
@@ -62,9 +59,7 @@ body {
 .hero h1 { font-size: 32px; font-weight: bold; margin-bottom: 4px; }
 .change { font-weight: bold; font-size: 15px; }
 .chip { background: rgba(255,255,255,0.05); padding: 10px 14px; border-radius: 8px; font-size: 13px; border: 1px solid rgba(255,255,255,0.02); }
-.chip b { margin-right: 6px; color: var(--accent); }
 
-/* 좌측 2분할 그리드 핵심 구조 */
 .row.two {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -78,7 +73,6 @@ body {
   gap: 24px;
 }
 
-/* 공통 다크 테마 카드 패널 */
 .panel {
   background-color: var(--panel-bg);
   border: 1px solid var(--border);
@@ -95,14 +89,12 @@ body {
 }
 .panel header h2 { font-size: 18px; font-weight: bold; }
 
-/* 차트 박스 영역 크기 락(Lock) */
 .chart-container {
   position: relative;
   width: 100%;
   height: 320px;
 }
 
-/* 주문 패널 우측 자석 스티키 고정 및 네온 테두리 */
 .sticky-order-panel {
   position: -webkit-sticky;
   position: sticky;
@@ -112,7 +104,6 @@ body {
   border: 1px solid var(--accent) !important;
 }
 
-/* 마켓 종목 리스트 뷰 */
 .coin-list {
   list-style: none;
   display: flex;
@@ -147,7 +138,6 @@ body {
 .coin-price { font-weight: bold; margin-right: 20px; text-align: right; font-size: 15px; }
 .coin-chg { font-size: 13px; font-weight: bold; min-width: 70px; text-align: right; }
 
-/* 매매 인터페이스 폼 요소 */
 .order-box { display: flex; flex-direction: column; gap: 18px; }
 .order-info { font-size: 14px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
 .order-info div { display: flex; justify-content: space-between; }
@@ -188,13 +178,11 @@ body {
 #btnSell { background-color: var(--down); }
 .t-trade-btn:hover { opacity: 0.9; }
 
-/* 자산현황 표 레이아웃 컴포넌트 */
 .table-wrapper { overflow-x: auto; }
 .holdings { width: 100%; border-collapse: collapse; text-align: left; }
 .holdings th, .holdings td { padding: 16px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
 .holdings th { color: var(--muted); font-weight: normal; }
 .holdings tbody tr:hover { background: rgba(255,255,255,0.01); }
 
-/* 시세 상승/하락 범용 컬러 클래스 */
 .up { color: var(--up) !important; }
 .down { color: var(--down) !important; }
