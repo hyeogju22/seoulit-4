@@ -1,245 +1,122 @@
-const COINS = [
-  { sym: 'BTC', name: '비트코인',   price: 84500000, chg: 2.4,  color: '#f7931a', amount: 0.085, avgPrice: 81000000 },
-  { sym: 'ETH', name: '이더리움',   price: 3120000,  chg: 3.8,  color: '#627eea', amount: 1.2,   avgPrice: 3000000 },
-  { sym: 'SOL', name: '솔라나',     price: 192000,    chg: -1.2, color: '#9945ff', amount: 8.5,   avgPrice: 195000 },
-  { sym: 'BNB', name: '바이낸스',   price: 412000,    chg: 0.8,  color: '#f3ba2f', amount: 2.4,   avgPrice: 405000 },
-  { sym: 'XRP', name: '리플',       price: 624,        chg: -0.5, color: '#23292f', amount: 1240,  avgPrice: 630 },
-  { sym: 'ADA', name: '카르다노',   price: 580,        chg: 1.4,  color: '#0033ad', amount: 800,   avgPrice: 560 },
-];
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBER COIN SIMULATOR v1.1</title>
+  <!-- CSS 스타일시트 연결 -->
+  <link rel="stylesheet" href="style.css">
+  <!-- 실시간 라인 차트 라이브러리 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
 
-let userCash = 10000000; 
-let selectedCoin = COINS[0]; 
+  <!-- 최상단 네비게이션 바 -->
+  <nav class="top">
+    <div class="brand">🚀 CYBER COIN EXCHANGE <span>Simulation v1.1</span></div>
+    <div class="right">
+      <div class="live">LIVE FEED CONNECTED</div>
+      <div class="krw-wallet">가용 투자 현금: <b id="userCash">10,000,000</b> KRW</div>
+    </div>
+  </nav>
 
-let initialTotalAsset = userCash;
-COINS.forEach(c => {
-  initialTotalAsset += c.avgPrice * c.amount;
-});
-
-const chartDataStorage = {};
-COINS.forEach(c => {
-  chartDataStorage[c.sym] = makeInitialData(c.price, c.chg);
-});
-
-function fmt(v) {
-  if (Math.abs(v) >= 10000) return Math.round(v).toLocaleString('ko-KR');
-  return v.toFixed(2);
-}
-
-function makeInitialData(base, chg, n = 20) {
-  const out = [];
-  let v = base * (1 - chg / 100);
-  for (let i = 0; i < n; i++) {
-    v *= 1 + (Math.random() - 0.5) * 0.01;
-    out.push(v);
-  }
-  out.push(base);
-  return out;
-}
-
-function initCoinList() {
-  const coinList = document.getElementById('coinList');
-  if (!coinList) return;
-  coinList.innerHTML = '';
-  
-  COINS.forEach((c) => {
-    const el = document.createElement('li');
-    el.id = `list-${c.sym}`;
-    el.className = 'coin' + (c.sym === selectedCoin.sym ? ' active' : '');
-    el.innerHTML = `
-      <div class="coin-ic" style="background:${c.color}22;color:${c.color}">${c.sym[0]}</div>
-      <div class="coin-info"><b>${c.name}</b><span>${c.sym}</span></div>
-      <div class="coin-price" id="lp-${c.sym}">₩ 0</div>
-      <div class="coin-chg" id="lc-${c.sym}">0%</div>
-    `;
-    el.addEventListener('click', () => {
-      selectedCoin = c;
-      document.querySelectorAll('.coin').forEach((x) => x.classList.remove('active'));
-      el.classList.add('active');
-      document.getElementById('chartCoin').textContent = `${c.sym} / KRW`;
-      selectOrderCoin(c);
-      updateChart(c);
-    });
-    coinList.appendChild(el);
-  });
-}
-
-function updateCoinListValues() {
-  COINS.forEach(c => {
-    const priceEl = document.getElementById(`lp-${c.sym}`);
-    const chgEl = document.getElementById(`lc-${c.sym}`);
-    if (priceEl) priceEl.textContent = `₩ ${fmt(c.price)}`;
-    if (chgEl) {
-      chgEl.textContent = `${c.chg >= 0 ? '▲' : '▼'} ${Math.abs(c.chg).toFixed(2)}%`;
-      chgEl.className = `coin-chg ${c.chg >= 0 ? 'up' : 'down'}`;
-    }
-  });
-}
-
-function selectOrderCoin(c) {
-  document.getElementById('orderCoinName').textContent = c.name;
-  document.getElementById('orderCoinSym').textContent = c.sym;
-  document.getElementById('inputUnit').textContent = c.sym;
-  document.getElementById('orderPrice').textContent = '₩ ' + fmt(c.price);
-  document.getElementById('orderMyAmount').textContent = c.amount.toFixed(4);
-}
-
-function updatePortfolioAndHoldings() {
-  let totalCoinValue = 0;
-
-  COINS.forEach((c) => {
-    const value = c.price * c.amount;
-    const cost = c.avgPrice * c.amount;
-    const pnl = c.amount > 0 ? (value - cost) : 0;
-    const pct = cost > 0 ? (pnl / cost) * 100 : 0;
+  <!-- 메인 대시보드 구조 -->
+  <main class="main">
     
-    totalCoinValue += value;
+    <!-- 종합 계좌 정보 카드 -->
+    <section class="hero">
+      <div>
+        <p class="kicker">총 평가 자산 (예수금 + 코인 평가금)</p>
+        <h1 id="portfolio">₩ 10,000,000</h1>
+        <div id="change" class="change up">▲ ₩ 0 (0.00%)</div>
+      </div>
+      <div>
+        <div class="chip">총 투자 원금: <span id="initAssetDisplay" style="color:#fff; font-weight:bold;">₩ 0</span></div>
+      </div>
+    </section>
 
-    const tr = document.getElementById(`row-${c.sym}`);
-    if (tr) {
-      tr.innerHTML = `
-        <td>${c.sym} <span style="color:var(--muted);font-weight:400">${c.name}</span></td>
-        <td>${c.amount.toFixed(4)}</td>
-        <td>₩ ${fmt(c.avgPrice)}</td>
-        <td>₩ ${fmt(c.price)}</td>
-        <td class="${pnl >= 0 ? 'up' : 'down'}">${pnl > 0 ? '+' : ''}${c.amount > 0 ? '₩ ' + fmt(pnl) : '₩ 0'}</td>
-        <td class="${pct >= 0 ? 'up' : 'down'}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</td>
-      `;
-    }
-  });
+    <!-- 2단 반응형 그리드 -->
+    <div class="row two">
+      
+      <!-- 왼쪽 컬럼: 차트 및 자산 테이블 -->
+      <div class="left-col">
+        <!-- 실시간 시세 그래프 -->
+        <article class="panel">
+          <header>
+            <h2 id="chartCoin">BTC / KRW</h2>
+            <span style="color: var(--muted); font-size: 12px;">3초 주기 실시간 리프레시</span>
+          </header>
+          <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+          </div>
+        </article>
 
-  const currentTotalAsset = userCash + totalCoinValue;
-  document.getElementById('userCash').textContent = Math.floor(userCash).toLocaleString('ko-KR');
-  document.getElementById('portfolio').textContent = '₩ ' + Math.floor(currentTotalAsset).toLocaleString('ko-KR');
+        <!-- 보유 자산 상태판 -->
+        <article class="panel">
+          <header>
+            <h2>보유 자산 실시간 현황</h2>
+          </header>
+          <div class="table-wrapper">
+            <table class="holdings">
+              <thead>
+                <tr>
+                  <th>자산명</th>
+                  <th>보유수량</th>
+                  <th>매수평균가</th>
+                  <th>현재가</th>
+                  <th>평가손익</th>
+                  <th>수익률</th>
+                </tr>
+              </thead>
+              <tbody id="holdingsBody">
+                <!-- 자바스크립트 동적 생성 영역 -->
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
 
-  const totalPnl = currentTotalAsset - initialTotalAsset;
-  const totalPct = (totalPnl / initialTotalAsset) * 100;
+      <!-- 오른쪽 컬럼: 마켓 시세판 및 고정 주문창 -->
+      <div class="right-col">
+        <!-- 마켓 종목 리스트 -->
+        <article class="panel">
+          <header>
+            <h2>실시간 마켓 시세</h2>
+          </header>
+          <ul class="coin-list" id="coinList">
+            <!-- 코인 종목 동적 생성 영역 -->
+          </ul>
+        </article>
 
-  const chgEl = document.getElementById('change');
-  chgEl.textContent = `${totalPnl >= 0 ? '▲' : '▼'} ₩ ${Math.abs(Math.floor(totalPnl)).toLocaleString('ko-KR')} (${totalPnl >= 0 ? '+' : ''}${totalPct.toFixed(2)}%)`;
-  chgEl.className = 'change ' + (totalPnl >= 0 ? 'up' : 'down');
+        <!-- 네온 옐로우 스티키 주문 패널 -->
+        <article class="panel sticky-order-panel">
+          <header>
+            <h2><span id="orderCoinName">비트코인</span> 원화 주문</h2>
+          </header>
+          <div class="order-box">
+            <div class="order-info">
+              <div><span>주문 예정 코인</span> <span class="order-price" id="orderCoinSym">BTC</span></div>
+              <div><span>주문 현재 시세</span> <span class="order-price" id="orderPrice">₩ 0</span></div>
+              <div><span>내가 가진 수량</span> <span class="order-price" id="orderMyAmount">0.0000</span></div>
+            </div>
 
-  document.getElementById('orderMyAmount').textContent = selectedCoin.amount.toFixed(4);
-  document.getElementById('orderPrice').textContent = '₩ ' + fmt(selectedCoin.price);
-}
+            <div class="input-group">
+              <input type="number" id="tradeAmount" placeholder="주문할 수량 입력" step="0.0001" min="0">
+              <span class="unit" id="inputUnit">BTC</span>
+            </div>
 
-document.getElementById('btnBuy').addEventListener('click', () => {
-  const amtInput = document.getElementById('tradeAmount');
-  const amountToBuy = parseFloat(amtInput.value);
-  if (isNaN(amountToBuy) || amountToBuy <= 0) return alert('올바른 수량을 입력해주세요.');
+            <div class="trade-buttons">
+              <button id="btnBuy" class="t-trade-btn">지정가 매수</button>
+              <button id="btnSell" class="t-trade-btn">지정가 매도</button>
+            </div>
+          </div>
+        </article>
+      </div>
 
-  const requiredCash = selectedCoin.price * amountToBuy;
-  if (userCash < requiredCash) return alert('보유 현금이 부족합니다.');
+    </div>
+  </main>
 
-  userCash -= requiredCash;
-  const currentCost = selectedCoin.avgPrice * selectedCoin.amount;
-  const nextAmount = parseFloat((selectedCoin.amount + amountToBuy).toFixed(6));
-  
-  selectedCoin.avgPrice = (currentCost + requiredCash) / nextAmount;
-  selectedCoin.amount = nextAmount;
-
-  amtInput.value = '';
-  updatePortfolioAndHoldings();
-  updateCoinListValues();
-});
-
-document.getElementById('btnSell').addEventListener('click', () => {
-  const amtInput = document.getElementById('tradeAmount');
-  const amountToSell = parseFloat(amtInput.value);
-  if (isNaN(amountToSell) || amountToSell <= 0) return alert('올바른 수량을 입력해주세요.');
-
-  if (parseFloat(selectedCoin.amount.toFixed(6)) < amountToSell) return alert('보유 수량이 부족합니다.');
-
-  const revenue = selectedCoin.price * amountToSell;
-  userCash += revenue;
-  selectedCoin.amount = parseFloat((selectedCoin.amount - amountToSell).toFixed(6));
-
-  if (selectedCoin.amount <= 0.00001) {
-    selectedCoin.amount = 0;
-    selectedCoin.avgPrice = 0;
-  }
-
-  amtInput.value = '';
-  updatePortfolioAndHoldings();
-  updateCoinListValues();
-});
-
-// 📊 차트 업데이트 시 스크롤 튕김 원천 봉쇄 로직 추가
-let chart;
-function updateChart(c) {
-  const ctx = document.getElementById('priceChart');
-  if (!ctx) return;
-  
-  // 1. 차트 갱신 전, 현재 스크롤 바의 Y축 위치를 메모리에 임시 기억합니다.
-  const currentScrollY = window.scrollY;
-  
-  const currentHistory = chartDataStorage[c.sym];
-  const minLimit = c.price * 0.85;
-  const maxLimit = c.price * 1.15;
-
-  if (chart) {
-    chart.data.labels = currentHistory.map((_, i) => `${i}m`);
-    chart.data.datasets[0].data = currentHistory;
-    chart.data.datasets[0].borderColor = c.chg >= 0 ? '#16c784' : '#ea3943';
-    chart.data.datasets[0].backgroundColor = c.chg >= 0 ? 'rgba(22,199,132,.08)' : 'rgba(234,57,67,.08)';
-    chart.options.scales.y.min = minLimit;
-    chart.options.scales.y.max = maxLimit;
-    
-    chart.update('none'); 
-    
-    // 2. 차트가 강제로 스크롤을 위로 올리더라도 원래 있던 위치로 즉시 재고정합니다.
-    window.scrollTo(0, currentScrollY);
-  } else {
-    chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: currentHistory.map((_, i) => `${i}m`),
-        datasets: [{
-          data: currentHistory,
-          borderColor: c.chg >= 0 ? '#16c784' : '#ea3943',
-          backgroundColor: c.chg >= 0 ? 'rgba(22,199,132,.08)' : 'rgba(234,57,67,.08)',
-          tension: .3, fill: true, pointRadius: 0, borderWidth: 2,
-        }],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { grid: { color: '#1a2138' }, ticks: { color: '#8088a3' }, min: minLimit, max: maxLimit },
-          x: { grid: { display: false }, ticks: { color: '#8088a3', autoSkip: true, maxTicksLimit: 8 } },
-        },
-      },
-    });
-  }
-}
-
-setInterval(() => {
-  COINS.forEach((c) => { 
-    const dice = Math.random();
-    let rate = 0;
-    if (dice < 0.025) { 
-      rate = -(0.05 + Math.random() * 0.10); 
-    } else if (dice > 0.975) {
-      rate = (0.05 + Math.random() * 0.10);  
-    } else {
-      const isUp = Math.random() > 0.50;
-      rate = (Math.random() * 0.008) * (isUp ? 1 : -1); 
-    }
-    c.price *= (1 + rate); 
-    c.chg += rate * 100;
-
-    chartDataStorage[c.sym].push(c.price);
-    chartDataStorage[c.sym].shift();
-  });
-
-  updateCoinListValues();
-  updatePortfolioAndHoldings();
-  updateChart(selectedCoin);
-}, 3000);
-
-document.addEventListener('DOMContentLoaded', () => {
-  initCoinList();
-  updateCoinListValues();
-  selectOrderCoin(selectedCoin);
-  updatePortfolioAndHoldings();
-  updateChart(selectedCoin);
-});
+  <!-- 자바스크립트 비즈니스 로직 연결 -->
+  <script src="script.js"></script>
+</body>
+</html>
