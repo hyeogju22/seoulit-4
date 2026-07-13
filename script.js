@@ -15,12 +15,29 @@ COINS.forEach(c => {
   initialTotalAsset += c.avgPrice * c.amount;
 });
 
+// 코인별 실시간 데이터 흐름 저장소
+const chartDataStorage = {};
+COINS.forEach(c => {
+  chartDataStorage[c.sym] = makeInitialData(c.price, c.chg);
+});
+
 function fmt(v) {
   if (Math.abs(v) >= 10000) return Math.round(v).toLocaleString('ko-KR');
   return v.toFixed(2);
 }
 
-// 1. 인기 코인 UI 갱신 (고정 상태 유지)
+function makeInitialData(base, chg, n = 20) {
+  const out = [];
+  let v = base * (1 - chg / 100);
+  for (let i = 0; i < n; i++) {
+    v *= 1 + (Math.random() - 0.5) * 0.01;
+    out.push(v);
+  }
+  out.push(base);
+  return out;
+}
+
+// 1. 인기 코인 고정 목록 출력
 const coinList = document.getElementById('coinList');
 function renderCoinList() {
   if (!coinList) return;
@@ -54,15 +71,14 @@ function selectOrderCoin(c) {
   document.getElementById('orderMyAmount').textContent = c.amount.toFixed(4);
 }
 
-// 2. 보유 자산 테이블 갱신 (★기존 누적 버그 해결 - 매번 비우고 새로 그림)
+// 2. 보유 자산 테이블 고정 출력 (행 누적 현상 제거)
 const holdings = document.getElementById('holdings');
 function updatePortfolioAndHoldings() {
   if (!holdings) return;
-  holdings.innerHTML = ''; // 테이블 내용 초기화로 화면 고정!
+  holdings.innerHTML = ''; 
   let totalCoinValue = 0;
 
   COINS.forEach((c) => {
-    // 보유 수량이 없더라도 리스트 형태는 유지하되 수량 0으로 고정 표시
     const value = c.price * c.amount;
     const cost = c.avgPrice * c.amount;
     const pnl = c.amount > 0 ? (value - cost) : 0;
@@ -97,7 +113,7 @@ function updatePortfolioAndHoldings() {
   document.getElementById('orderPrice').textContent = '₩ ' + fmt(selectedCoin.price);
 }
 
-// 🛒 즉시 매수
+// 🛒 즉시 구매 매커니즘
 document.getElementById('btnBuy').addEventListener('click', () => {
   const amtInput = document.getElementById('tradeAmount');
   const amountToBuy = parseFloat(amtInput.value);
@@ -125,7 +141,7 @@ document.getElementById('btnBuy').addEventListener('click', () => {
   renderCoinList();
 });
 
-// 📉 즉시 매도
+// 📉 즉시 판매 매커니즘
 document.getElementById('btnSell').addEventListener('click', () => {
   const amtInput = document.getElementById('tradeAmount');
   const amountToSell = parseFloat(amtInput.value);
@@ -154,73 +170,73 @@ document.getElementById('btnSell').addEventListener('click', () => {
   renderCoinList();
 });
 
-// 차트 관련 엔진
+// 📊 차트 틀 고정 및 선만 실시간 전진 시스템
 let chart;
-function makeData(base, chg, n = 24) {
-  const out = [];
-  let v = base * (1 - chg / 100);
-  for (let i = 0; i < n; i++) {
-    v *= 1 + (Math.random() - 0.5 + chg / 100 / n) * 0.02;
-    out.push(v);
-  }
-  out.push(base);
-  return out;
-}
-
 function updateChart(c) {
   const ctx = document.getElementById('priceChart');
   if (!ctx) return;
-  const data = makeData(c.price, c.chg);
-  if (chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: data.map((_, i) => `${i}h`),
-      datasets: [{
-        data,
-        borderColor: c.chg >= 0 ? '#16c784' : '#ea3943',
-        backgroundColor: c.chg >= 0 ? 'rgba(22,199,132,.08)' : 'rgba(234,57,67,.08)',
-        tension: .35, fill: true, pointRadius: 0, borderWidth: 2,
-      }],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { grid: { color: '#1a2138' }, ticks: { color: '#8088a3', callback: (v) => '₩' + (v / 1_000_000).toFixed(1) + 'M' } },
-        x: { grid: { display: false }, ticks: { color: '#8088a3', autoSkip: true, maxTicksLimit: 6 } },
+  
+  const currentHistory = chartDataStorage[c.sym];
+
+  if (chart) {
+    chart.data.labels = currentHistory.map((_, i) => `${i}m`);
+    chart.data.datasets[0].data = currentHistory;
+    chart.data.datasets[0].borderColor = c.chg >= 0 ? '#16c784' : '#ea3943';
+    chart.data.datasets[0].backgroundColor = c.chg >= 0 ? 'rgba(22,199,132,.08)' : 'rgba(234,57,67,.08)';
+    chart.update('none'); // 프레임 재생성 없이 '선' 데이터만 업데이트하여 이동시킴
+  } else {
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: currentHistory.map((_, i) => `${i}m`),
+        datasets: [{
+          data: currentHistory,
+          borderColor: c.chg >= 0 ? '#16c784' : '#ea3943',
+          backgroundColor: c.chg >= 0 ? 'rgba(22,199,132,.08)' : 'rgba(234,57,67,.08)',
+          tension: .3, fill: true, pointRadius: 0, borderWidth: 2,
+        }],
       },
-    },
-  });
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: '#1a2138' }, ticks: { color: '#8088a3' } },
+          x: { grid: { display: false }, ticks: { color: '#8088a3', autoSkip: true, maxTicksLimit: 8 } },
+        },
+      },
+    });
+  }
 }
 
-// 🎰 복불복 변동성 시뮬레이터 (★ 떡상 / 떡락 시스템 장착)
+// 🎰 3초 복불복 변동 시뮬레이터 (5% 확률 무작위 대폭락 떡락 / 대폭등 떡상)
 setInterval(() => {
   COINS.forEach((c) => { 
-    const dice = Math.random(); // 0~1 사이 주사위
+    const dice = Math.random();
+    let rate = 0;
 
-    if (dice < 0.02) { 
-      // 2% 확률로 초대형 대악재 떡락 고정 (-15% ~ -30%)
-      const crashRate = 0.15 + (Math.random() * 0.15);
-      c.price *= (1 - crashRate);
-      c.chg -= crashRate * 100;
-      console.log(`💥 ${c.name} 폭락 발생!!`);
-    } else if (dice > 0.98) {
-      // 2% 확률로 초대형 초호재 떡상 호재 (+15% ~ +30%)
-      const moonRate = 0.15 + (Math.random() * 0.15);
-      c.price *= (1 + moonRate);
-      c.chg += moonRate * 100;
-      console.log(`🚀 ${c.name} 화성 갈끄니까!!`);
+    if (dice < 0.025) { 
+      // 💥 2.5% 확률 악재 터짐 (-10% ~ -25% 대폭락)
+      rate = -(0.1 + Math.random() * 0.15);
+    } else if (dice > 0.975) {
+      // 🚀 2.5% 확률 호재 터짐 (+10% ~ +25% 대폭등)
+      rate = (0.1 + Math.random() * 0.15);
     } else {
-      // 나머지 96%는 일상적인 미세 변동 (상승/하락 확률 반반)
-      const isUp = Math.random() > 0.50; 
-      const rate = (Math.random() * 0.008); // 변동폭 최대 0.8%
-      c.price *= 1 + (isUp ? rate : -rate); 
-      c.chg += isUp ? rate * 10 : -rate * 10;
+      // 95% 평범한 복불복 미세 무작위 위아래 등락
+      const isUp = Math.random() > 0.50;
+      rate = (Math.random() * 0.012) * (isUp ? 1 : -1); 
     }
+
+    c.price *= (1 + rate); 
+    c.chg += rate * 100;
+
+    // 차트 배열 끝에 새 가격 넣고 맨 앞 제거하여 선이 왼쪽으로 스르륵 전진하게 연동
+    chartDataStorage[c.sym].push(c.price);
+    chartDataStorage[c.sym].shift();
   });
+
   renderCoinList();
   updatePortfolioAndHoldings();
+  updateChart(selectedCoin);
 }, 3000);
 
 document.addEventListener('DOMContentLoaded', () => {
