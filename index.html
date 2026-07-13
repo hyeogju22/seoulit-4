@@ -3,27 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CYBER COIN SIMULATOR v1.1</title>
-  <!-- CSS 스타일시트 연결 -->
+  <title>CYBER COIN SIMULATOR</title>
   <link rel="stylesheet" href="style.css">
-  <!-- 실시간 라인 차트 라이브러리 -->
+  <!-- Chart.js 라이브러리 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-  <!-- 최상단 네비게이션 바 -->
+  <!-- 상단 네비게이션 바 -->
   <nav class="top">
-    <div class="brand">🚀 CYBER COIN EXCHANGE <span>Simulation v1.1</span></div>
+    <div class="brand">🚀 CYBER COIN EXCHANGE <span>Simulation</span></div>
     <div class="right">
       <div class="live">LIVE FEED CONNECTED</div>
       <div class="krw-wallet">가용 투자 현금: <b id="userCash">10,000,000</b> KRW</div>
     </div>
   </nav>
 
-  <!-- 메인 대시보드 구조 -->
+  <!-- 메인 대시보드 -->
   <main class="main">
     
-    <!-- 종합 계좌 정보 카드 -->
+    <!-- 총자산 브리핑 보드 -->
     <section class="hero">
       <div>
         <p class="kicker">총 평가 자산 (예수금 + 코인 평가금)</p>
@@ -35,10 +34,10 @@
       </div>
     </section>
 
-    <!-- 2단 반응형 그리드 -->
+    <!-- 2단 그리드 레이아웃 -->
     <div class="row two">
       
-      <!-- 왼쪽 컬럼: 차트 및 자산 테이블 -->
+      <!-- 왼쪽 기둥 -->
       <div class="left-col">
         <!-- 실시간 시세 그래프 -->
         <article class="panel">
@@ -51,7 +50,7 @@
           </div>
         </article>
 
-        <!-- 보유 자산 상태판 -->
+        <!-- 자산 상태판 -->
         <article class="panel">
           <header>
             <h2>보유 자산 실시간 현황</h2>
@@ -69,26 +68,26 @@
                 </tr>
               </thead>
               <tbody id="holdingsBody">
-                <!-- 자바스크립트 동적 생성 영역 -->
+                <!-- script.js에서 동적 렌더링 -->
               </tbody>
             </table>
           </div>
         </article>
       </div>
 
-      <!-- 오른쪽 컬럼: 마켓 시세판 및 고정 주문창 -->
+      <!-- 오른쪽 기둥 -->
       <div class="right-col">
-        <!-- 마켓 종목 리스트 -->
+        <!-- 마켓 리스트 시세판 -->
         <article class="panel">
           <header>
             <h2>실시간 마켓 시세</h2>
           </header>
           <ul class="coin-list" id="coinList">
-            <!-- 코인 종목 동적 생성 영역 -->
+            <!-- 코인 종목 동적 삽입 -->
           </ul>
         </article>
 
-        <!-- 네온 옐로우 스티키 주문 패널 -->
+        <!-- 스티키 원화 주문 패널 -->
         <article class="panel sticky-order-panel">
           <header>
             <h2><span id="orderCoinName">비트코인</span> 원화 주문</h2>
@@ -116,7 +115,6 @@
     </div>
   </main>
 
-  <!-- 자바스크립트 비즈니스 로직 연결 -->
   <script src="script.js"></script>
 </body>
 </html>
