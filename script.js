@@ -1,4 +1,4 @@
-// 1. 기본 마켓 코인 데이터 구성 (최초 기준가 보존용 origPrice 프로퍼티 신설)
+// [원본 데이터 구조 복원] 최초 기준가 보존을 위한 origPrice 필드 추가
 const COINS = [
   { sym: 'BTC', name: '비트코인',   price: 84500000, origPrice: 84500000, chg: 2.4,  color: '#f7931a', amount: 0.085, avgPrice: 81000000 },
   { sym: 'ETH', name: '이더리움',   price: 3120000,  origPrice: 3120000,  chg: 3.8,  color: '#627eea', amount: 1.2,   avgPrice: 3000000 },
@@ -8,17 +8,16 @@ const COINS = [
   { sym: 'ADA', name: '카르다노',   price: 580,      origPrice: 580,      chg: 1.4,  color: '#0033ad', amount: 800,   avgPrice: 560 },
 ];
 
-let userCash = 10000000; // 가용 시드머니 현금
-let selectedCoin = COINS[0]; // 기본 선택 종목: 비트코인
+let userCash = 10000000;
+let selectedCoin = COINS[0];
 let initialTotalAsset = userCash;
 
-// 초기 투자 자산 원금 계산식 정의
+// 투자 원금 기준 디스플레이 세팅
 COINS.forEach(c => {
   initialTotalAsset += c.avgPrice * c.amount;
 });
 document.getElementById('initAssetDisplay').textContent = '₩ ' + Math.floor(initialTotalAsset).toLocaleString('ko-KR');
 
-// 종목별 백데이터 배열 버퍼 할당
 const chartDataStorage = {};
 COINS.forEach(c => {
   chartDataStorage[c.sym] = makeInitialData(c.price, c.chg);
@@ -40,7 +39,7 @@ function makeInitialData(base, chg, n = 20) {
   return out;
 }
 
-// 보유 현황 행(Row) 생성기
+// 보유 자산 테이블 바인딩 뼈대
 function initHoldingsTable() {
   const body = document.getElementById('holdingsBody');
   if (!body) return;
@@ -52,7 +51,6 @@ function initHoldingsTable() {
   });
 }
 
-// 마켓 리스트 시세판 세팅
 function initCoinList() {
   const coinList = document.getElementById('coinList');
   if (!coinList) return;
@@ -80,7 +78,6 @@ function initCoinList() {
   });
 }
 
-// 실시간 시세 숫자 출력 업데이트
 function updateCoinListValues() {
   COINS.forEach(c => {
     const priceEl = document.getElementById(`lp-${c.sym}`);
@@ -93,7 +90,6 @@ function updateCoinListValues() {
   });
 }
 
-// 주문 상자 내 정보 동기화
 function selectOrderCoin(c) {
   document.getElementById('orderCoinName').textContent = c.name;
   document.getElementById('orderCoinSym').textContent = c.sym;
@@ -102,7 +98,6 @@ function selectOrderCoin(c) {
   document.getElementById('orderMyAmount').textContent = c.amount.toFixed(4);
 }
 
-// 내 계좌 자산 평가금 연산 루틴
 function updatePortfolioAndHoldings() {
   let totalCoinValue = 0;
 
@@ -142,7 +137,7 @@ function updatePortfolioAndHoldings() {
   document.getElementById('orderPrice').textContent = '₩ ' + fmt(selectedCoin.price);
 }
 
-// [지정가 매수 로직]
+// 매수 핸들러
 document.getElementById('btnBuy').addEventListener('click', () => {
   const amtInput = document.getElementById('tradeAmount');
   const amountToBuy = parseFloat(amtInput.value);
@@ -163,7 +158,7 @@ document.getElementById('btnBuy').addEventListener('click', () => {
   updateCoinListValues();
 });
 
-// [지정가 매도 로직]
+// 매도 핸들러
 document.getElementById('btnSell').addEventListener('click', () => {
   const amtInput = document.getElementById('tradeAmount');
   const amountToSell = parseFloat(amtInput.value);
@@ -185,66 +180,70 @@ document.getElementById('btnSell').addEventListener('click', () => {
   updateCoinListValues();
 });
 
-// 차트 객체 엔진 제어 코드
-let chart;
+// [차트 스크롤 튕김 원천 봉쇄 및 원본 스타일 완벽 구현]
+let chartctx; 
 function updateChart(c) {
   const ctx = document.getElementById('priceChart');
   if (!ctx) return;
   
-  const currentScrollY = window.scrollY; // 윈도우 스크롤 튕김 제어 방어막 코드
+  // 1. 차트 갱신 전, 현재 스크롤 Y축 위치를 메모리에 복사해둡니다.
+  const currentScrollY = window.scrollY; 
   const currentHistory = chartDataStorage[c.sym];
   const minLimit = c.price * 0.85;
   const maxLimit = c.price * 1.15;
 
-  if (chart) {
-    chart.data.labels = currentHistory.map((_, i) => `${i}m`);
-    chart.data.datasets[0].data = currentHistory;
-    chart.data.datasets[0].borderColor = c.chg >= 0 ? '#0ecb81' : '#f6465d';
-    chart.data.datasets[0].backgroundColor = c.chg >= 0 ? 'rgba(14,203,129,.05)' : 'rgba(246,70,93,.05)';
-    chart.options.scales.y.min = minLimit;
-    chart.options.scales.y.max = maxLimit;
-    chart.update('none'); 
+  if (chartctx) {
+    chartctx.data.labels = currentHistory.map((_, i) => `${i}m`);
+    chartctx.data.datasets[0].data = currentHistory;
+    // 원본 이미지 내 칼라 변수 매핑 적용 (#15c784 / #ea3943)
+    chartctx.data.datasets[0].borderColor = c.chg >= 0 ? '#15c784' : '#ea3943';
+    chartctx.data.datasets[0].backgroundColor = c.chg >= 0 ? 'rgba(22,199,132,.03)' : 'rgba(234,57,67,.03)';
+    chartctx.options.scales.y.min = minLimit;
+    chartctx.options.scales.y.max = maxLimit;
+    chartctx.update('none'); 
+    
+    // 2. 차트 드로잉 엔진이 임의로 브라우저 화면을 위로 튕겨올리더라도 원본 스크롤 위치로 강제 교정합니다.
     window.scrollTo(0, currentScrollY);
   } else {
-    chart = new Chart(ctx, {
+    chartctx = new Chart(ctx, {
       type: 'line',
       data: {
         labels: currentHistory.map((_, i) => `${i}m`),
         datasets: [{
           data: currentHistory,
-          borderColor: c.chg >= 0 ? '#0ecb81' : '#f6465d',
-          backgroundColor: c.chg >= 0 ? 'rgba(14,203,129,.05)' : 'rgba(246,70,93,.05)',
-          tension: .2, fill: true, pointRadius: 0, borderWidth: 2,
+          borderColor: c.chg >= 0 ? '#15c784' : '#ea3943',
+          backgroundColor: c.chg >= 0 ? 'rgba(22,199,132,.03)' : 'rgba(234,57,67,.03)',
+          tension: .3, fill: true, pointRadius: 0, borderWidth: 2,
         }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { grid: { color: '#2b3139' }, ticks: { color: '#848e9c' }, min: minLimit, max: maxLimit },
-          x: { grid: { display: false }, ticks: { color: '#848e9c', autoSkip: true, maxTicksLimit: 8 } },
+          y: { grid: { color: '#1a2130' }, ticks: { color: '#808a9a' }, min: minLimit, max: maxLimit },
+          x: { grid: { display: false }, ticks: { color: '#808a9a', autoSkip: true, maxTicksLimit: 8 } },
         },
       },
     });
   }
 }
 
-// 3초 단위 글로벌 시세 난수 변동 엔진 인터벌
+// 3초 연쇄 엔진 실행
 setInterval(() => {
   COINS.forEach((c) => { 
     const dice = Math.random();
     let rate = 0;
     if (dice < 0.025) { 
-      rate = -(0.05 + Math.random() * 0.10); // 급락 돌발 변수
+      rate = -(0.05 + Math.random() * 0.10); 
     } else if (dice > 0.975) {
-      rate = (0.05 + Math.random() * 0.10);  // 급등 돌발 변수
+      rate = (0.05 + Math.random() * 0.10);  
     } else {
       const isUp = Math.random() > 0.50;
-      rate = (Math.random() * 0.008) * (isUp ? 1 : -1); // 일반 보합 변동
+      rate = (Math.random() * 0.008) * (isUp ? 1 : -1); 
     }
     c.price *= (1 + rate); 
     
-    // 📌 [버그 수정]: 누적합 연산 에러를 수정하여 최초 상수가 기록된 origPrice 기준으로 등락률을 항상 정확하게 재연산합니다.
+    // 📌 [버그 전면 수정]: 누적 연산 오류를 해결하기 위해 고정 상수 origPrice 기준으로 정확하게 퍼센트를 역산합니다.
     c.chg = ((c.price - c.origPrice) / c.origPrice) * 100;
 
     chartDataStorage[c.sym].push(c.price);
@@ -256,7 +255,6 @@ setInterval(() => {
   updateChart(selectedCoin);
 }, 3000);
 
-// 페이지 초기 구동 리스너
 document.addEventListener('DOMContentLoaded', () => {
   initHoldingsTable();
   initCoinList();
