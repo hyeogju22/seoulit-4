@@ -7,10 +7,9 @@ const COINS = [
   { sym: 'ADA', name: '카르다노',   price: 580,        chg: 1.4,  color: '#0033ad', amount: 800,   avgPrice: 560 },
 ];
 
-let userCash = 10000000; // 초기 사용 가능한 원화 현금
-let selectedCoin = COINS[0]; // 기본 선택된 코인
+let userCash = 10000000; 
+let selectedCoin = COINS[0]; 
 
-// 게임의 초깃값 기준자산 (수익률 추적용 고정값)
 let initialTotalAsset = userCash;
 COINS.forEach(c => {
   initialTotalAsset += c.avgPrice * c.amount;
@@ -18,15 +17,15 @@ COINS.forEach(c => {
 
 function fmt(v) {
   if (Math.abs(v) >= 10000) return Math.round(v).toLocaleString('ko-KR');
-  return v.toString();
+  return v.toFixed(2);
 }
 
-// 인기 코인 UI 갱신
+// 1. 인기 코인 UI 갱신 (고정 상태 유지)
 const coinList = document.getElementById('coinList');
 function renderCoinList() {
   if (!coinList) return;
   coinList.innerHTML = '';
-  COINS.forEach((c, i) => {
+  COINS.forEach((c) => {
     const el = document.createElement('li');
     el.className = 'coin' + (c.sym === selectedCoin.sym ? ' active' : '');
     el.innerHTML = `
@@ -47,7 +46,6 @@ function renderCoinList() {
   });
 }
 
-// 주문 창 데이터 세팅
 function selectOrderCoin(c) {
   document.getElementById('orderCoinName').textContent = c.name;
   document.getElementById('orderCoinSym').textContent = c.sym;
@@ -56,19 +54,18 @@ function selectOrderCoin(c) {
   document.getElementById('orderMyAmount').textContent = c.amount.toFixed(4);
 }
 
-// 보유 자산 테이블 및 포트폴리오 가치 갱신
+// 2. 보유 자산 테이블 갱신 (★기존 누적 버그 해결 - 매번 비우고 새로 그림)
 const holdings = document.getElementById('holdings');
 function updatePortfolioAndHoldings() {
   if (!holdings) return;
-  holdings.innerHTML = '';
+  holdings.innerHTML = ''; // 테이블 내용 초기화로 화면 고정!
   let totalCoinValue = 0;
 
   COINS.forEach((c) => {
-    if (c.amount <= 0) return;
-    
+    // 보유 수량이 없더라도 리스트 형태는 유지하되 수량 0으로 고정 표시
     const value = c.price * c.amount;
     const cost = c.avgPrice * c.amount;
-    const pnl = value - cost;
+    const pnl = c.amount > 0 ? (value - cost) : 0;
     const pct = cost > 0 ? (pnl / cost) * 100 : 0;
     
     totalCoinValue += value;
@@ -79,13 +76,12 @@ function updatePortfolioAndHoldings() {
       <td>${c.amount.toFixed(4)}</td>
       <td>₩ ${fmt(c.avgPrice)}</td>
       <td>₩ ${fmt(c.price)}</td>
-      <td class="${pnl >= 0 ? 'up' : 'down'}">${pnl >= 0 ? '+' : ''}₩ ${fmt(pnl)}</td>
-      <td class="${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%</td>
+      <td class="${pnl >= 0 ? 'up' : 'down'}">${pnl > 0 ? '+' : ''}${c.amount > 0 ? '₩ ' + fmt(pnl) : '₩ 0'}</td>
+      <td class="${pct >= 0 ? 'up' : 'down'}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</td>
     `;
     holdings.appendChild(tr);
   });
 
-  // 총 자산 = 현금 + 코인 평가금액
   const currentTotalAsset = userCash + totalCoinValue;
   document.getElementById('userCash').textContent = Math.floor(userCash).toLocaleString('ko-KR');
   document.getElementById('portfolio').textContent = '₩ ' + Math.floor(currentTotalAsset).toLocaleString('ko-KR');
@@ -97,12 +93,11 @@ function updatePortfolioAndHoldings() {
   chgEl.textContent = `${totalPnl >= 0 ? '▲' : '▼'} ₩ ${Math.abs(Math.floor(totalPnl)).toLocaleString('ko-KR')} (${totalPnl >= 0 ? '+' : ''}${totalPct.toFixed(2)}%)`;
   chgEl.className = 'change ' + (totalPnl >= 0 ? 'up' : 'down');
 
-  // 현재 활성화된 주문창 실시간 데이터 동기화
   document.getElementById('orderMyAmount').textContent = selectedCoin.amount.toFixed(4);
   document.getElementById('orderPrice').textContent = '₩ ' + fmt(selectedCoin.price);
 }
 
-// 🛒 매수 처리
+// 🛒 즉시 매수
 document.getElementById('btnBuy').addEventListener('click', () => {
   const amtInput = document.getElementById('tradeAmount');
   const amountToBuy = parseFloat(amtInput.value);
@@ -130,7 +125,7 @@ document.getElementById('btnBuy').addEventListener('click', () => {
   renderCoinList();
 });
 
-// 📉 매도 처리
+// 📉 즉시 매도
 document.getElementById('btnSell').addEventListener('click', () => {
   const amtInput = document.getElementById('tradeAmount');
   const amountToSell = parseFloat(amtInput.value);
@@ -159,7 +154,7 @@ document.getElementById('btnSell').addEventListener('click', () => {
   renderCoinList();
 });
 
-// 가격 차트 생성
+// 차트 관련 엔진
 let chart;
 function makeData(base, chg, n = 24) {
   const out = [];
@@ -199,30 +194,45 @@ function updateChart(c) {
   });
 }
 
-// 시간 버튼 전환 인터랙션
-document.querySelectorAll('.t-btn').forEach((b) => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.t-btn').forEach((x) => x.classList.remove('active'));
-    b.classList.add('active');
-  });
-});
-
-// 실시간 가격 시뮬레이션 (3초마다 가격 변동 후 연동 인프라 일괄 리프레시)
+// 🎰 복불복 변동성 시뮬레이터 (★ 떡상 / 떡락 시스템 장착)
 setInterval(() => {
   COINS.forEach((c) => { 
-    const isUp = Math.random() > 0.49;
-    const rate = (Math.random() * 0.005);
-    c.price *= 1 + (isUp ? rate : -rate); 
-    c.chg += isUp ? rate * 8 : -rate * 8;
+    const dice = Math.random(); // 0~1 사이 주사위
+
+    if (dice < 0.02) { 
+      // 2% 확률로 초대형 대악재 떡락 고정 (-15% ~ -30%)
+      const crashRate = 0.15 + (Math.random() * 0.15);
+      c.price *= (1 - crashRate);
+      c.chg -= crashRate * 100;
+      console.log(`💥 ${c.name} 폭락 발생!!`);
+    } else if (dice > 0.98) {
+      // 2% 확률로 초대형 초호재 떡상 호재 (+15% ~ +30%)
+      const moonRate = 0.15 + (Math.random() * 0.15);
+      c.price *= (1 + moonRate);
+      c.chg += moonRate * 100;
+      console.log(`🚀 ${c.name} 화성 갈끄니까!!`);
+    } else {
+      // 나머지 96%는 일상적인 미세 변동 (상승/하락 확률 반반)
+      const isUp = Math.random() > 0.50; 
+      const rate = (Math.random() * 0.008); // 변동폭 최대 0.8%
+      c.price *= 1 + (isUp ? rate : -rate); 
+      c.chg += isUp ? rate * 10 : -rate * 10;
+    }
   });
   renderCoinList();
   updatePortfolioAndHoldings();
 }, 3000);
 
-// 초기 구동 실행 보장 구조
 document.addEventListener('DOMContentLoaded', () => {
   renderCoinList();
   selectOrderCoin(selectedCoin);
   updatePortfolioAndHoldings();
   updateChart(selectedCoin);
+  
+  document.querySelectorAll('.t-btn').forEach((b) => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.t-btn').forEach((x) => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
 });
